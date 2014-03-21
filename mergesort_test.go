@@ -2,6 +2,7 @@ package mergesort
 
 import (
 	"bufio"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -102,6 +103,44 @@ func TestMediumNumbers(t *testing.T) {
 	}
 
 	sortedReader := bufio.NewReader(sortedFile)
+	var lastNum int64 = 0
+	line, err := sortedReader.ReadBytes('\n')
+	for err == nil {
+		strx := strings.Trim(string(line), "\n")
+		numx, _ := strconv.ParseInt(strx, 10, 64)
+		if numx < lastNum {
+			t.Errorf("out of order %d before %d", lastNum, numx)
+		}
+		lastNum = numx
+		line, err = sortedReader.ReadBytes('\n')
+	}
+}
+
+func TestSameFile(t *testing.T) {
+	// create a file with 100 random numbers
+	unsortedFile, err := os.OpenFile("test/new_unsorted_file.txt", os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer unsortedFile.Close()
+	defer os.Remove(unsortedFile.Name())
+	for i := 0; i < 100; i++ {
+		rnd := rand.Intn(100)
+		_, err = unsortedFile.WriteString(strconv.Itoa(rnd) + "\n")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	// FIXME should this be a bug? should the library rewind before starting? probably
+	unsortedFile.Seek(0, os.SEEK_SET)
+
+	err = MergeSort(unsortedFile, unsortedFile, readNewlineString, writeNewlineString, compareNumbers, nil, 64)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// now verify its sorted correctly
+	sortedReader := bufio.NewReader(unsortedFile)
 	var lastNum int64 = 0
 	line, err := sortedReader.ReadBytes('\n')
 	for err == nil {
