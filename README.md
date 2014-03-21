@@ -1,6 +1,6 @@
 ## mergesort
 
-An on disk merge sort library.
+An on disk merge sort library written in go.
 
 Provide methods to read records, write records, and compare records.  This library will take a file of unsorted records, and give you a file of sorted records.
 
