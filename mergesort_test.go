@@ -41,11 +41,11 @@ func compareStrings(rec1, rec2 interface{}, context interface{}) int {
 }
 
 func TestSmallString(t *testing.T) {
-	unsortedFile, err := os.Open("unsorted_strings.txt")
+	unsortedFile, err := os.Open("test/unsorted_strings.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
-	sortedFile, err := os.OpenFile("sorted_strings.txt", os.O_RDWR|os.O_CREATE, 0666)
+	sortedFile, err := os.OpenFile("test/sorted_strings.txt", os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,11 +86,11 @@ func compareNumbers(rec1, rec2 interface{}, context interface{}) int {
 }
 
 func TestMediumNumbers(t *testing.T) {
-	unsortedFile, err := os.Open("unsorted_numbers.txt")
+	unsortedFile, err := os.Open("test/unsorted_numbers.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
-	sortedFile, err := os.OpenFile("sorted_numbers.txt", os.O_RDWR|os.O_CREATE, 0666)
+	sortedFile, err := os.OpenFile("test/sorted_numbers.txt", os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		t.Fatal(err)
 	}
