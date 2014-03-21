@@ -8,32 +8,29 @@ import (
 	"testing"
 )
 
-func readNewlineString(file *os.File, context interface{}) ([]byte, int, error) {
-	curPos, err := file.Seek(0, os.SEEK_CUR)
-	if err != nil {
-		return nil, 0, err
-	}
+func readNewlineString(file *os.File, context interface{}) (interface{}, error) {
+	cur, err := file.Seek(0, os.SEEK_CUR)
 	r := bufio.NewReader(file)
 	line, err := r.ReadBytes('\n')
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	file.Seek(curPos+int64(len(line)), os.SEEK_SET)
-	return line, len(line), nil
+	file.Seek(cur+int64(len(line)), os.SEEK_SET)
+	return string(line[:len(line)-1]), nil
 }
 
-func writeNewlineString(file *os.File, buf []byte, context interface{}) (int, error) {
-
-	_, err := file.WriteString(string(buf))
+func writeNewlineString(file *os.File, record interface{}, context interface{}) error {
+	str := record.(string)
+	_, err := file.WriteString(str + "\n")
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return len(buf) + 1, nil
+	return nil
 }
 
-func compareStrings(buf1, buf2 []byte, context interface{}) int {
-	str1 := string(buf1)
-	str2 := string(buf2)
+func compareStrings(rec1, rec2 interface{}, context interface{}) int {
+	str1 := rec1.(string)
+	str2 := rec2.(string)
 
 	if str1 < str2 {
 		return -1
@@ -71,12 +68,12 @@ func TestSmallString(t *testing.T) {
 	}
 }
 
-func compareNumbers(buf1, buf2 []byte, context interface{}) int {
-	str1 := string(buf1)
+func compareNumbers(rec1, rec2 interface{}, context interface{}) int {
+	str1 := rec1.(string)
 	str1 = strings.Trim(str1, "\n")
 	num1, _ := strconv.ParseInt(str1, 10, 64)
 
-	str2 := string(buf2)
+	str2 := rec2.(string)
 	str2 = strings.Trim(str2, "\n")
 	num2, _ := strconv.ParseInt(str2, 10, 64)
 

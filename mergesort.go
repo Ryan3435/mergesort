@@ -1,3 +1,9 @@
+/*
+Package mergesort is a library for performing an on-disk merge sort.
+
+You provide a method to read, write, and compare records.  The library will take a file
+containing unsorted records, and produce a file containing sorted records.
+*/
 package mergesort
 
 import (
@@ -7,19 +13,36 @@ import (
 	"sort"
 )
 
-type tape struct {
-	fp    *os.File
-	count int
-}
+// ReadRecord is responsible for reading a single record from the file.  If an error occurs,
+// return nil and the error.  If the end of the file is reached, return io.EOF.  The record
+// object can be anything, but WriteRecord and CompareRecord calls in the same MergeSort
+// operation must be able to work with it.  The optional context object passed to the
+// original MergeSort operation is provided.
+type ReadRecord func(file *os.File, context interface{}) (interface{}, error)
 
-type readRecordFunc func(file *os.File, context interface{}) ([]byte, int, error)
-type writeRecordFunc func(file *os.File, buf []byte, context interface{}) (int, error)
-type compareRecordsFunc func(buf1, buf2 []byte, context interface{}) int
+// WriteRecord is responsible for writing a single record to the file.  If an error occurs,
+// return the error, otherwise nil.  The record object could be anything produced by another
+// ReadRecord call in the same MergeSort operation.  The optional context object passed to
+// the original MergeSort operation is provided.
+type WriteRecord func(file *os.File, record interface{}, context interface{}) error
 
-func MergeSort(unsortedFile, sortedFile *os.File, read readRecordFunc, write writeRecordFunc, compare compareRecordsFunc, context interface{}, blockSize int) error {
+// CompareRecords is responsible for ordering records.  Two records are provided, if rec1 is
+// less than rec2, return -1.  If rec1 is greater than rec2, return 1.  If they are the same,
+// return 0.  The record objects could be anything produced by another ReadRecord call in the
+// same MergeSort operation.  The optional context object passed ot the original MergeSort
+// operation is provided.
+type CompareRecords func(rec1, rec2 interface{}, context interface{}) int
+
+// MergeSort takes records from the unsortedFile, sorts them, and produces a sortedFile
+// containing the same records in sorted order.  To do this, the call provides three
+// methods ReadRecord, WriteRecord, and CompareRecords.  You can optionally provide a
+// context object, this object will be included in all calls to ReadRecord, WriteRecord,
+// CompareRecords.  The blockSize parameter will limit the total number of records that
+// are sorted in memory at a single time.
+func MergeSort(unsortedFile, sortedFile *os.File, read ReadRecord, write WriteRecord, compare CompareRecords, context interface{}, blockSize int) error {
 	var err error
 	sourceTape := make([]tape, 2)
-	record := make([][]byte, 2)
+	record := make([]interface{}, 2)
 
 	// create temporary files sourceTape[0] and sourceTape[1]
 	sourceTape[0].fp, err = ioutil.TempFile("", "goms")
@@ -38,23 +61,22 @@ func MergeSort(unsortedFile, sortedFile *os.File, read readRecordFunc, write wri
 	destination := 0
 	list := newRecordsList(blockSize, compare, context)
 	for {
-		var recordSize int
-		record[0], recordSize, err = read(unsortedFile, context)
+		record[0], err = read(unsortedFile, context)
 		if err != nil && err != io.EOF {
 			// error reading, return
 			return err
 		}
-		if recordSize != 0 {
+		if err == nil {
 			// not EOF, add record to in memory list
 			list.add(record[0])
 			blockCount++
 		}
-		if blockCount == blockSize || recordSize == 0 && blockCount != 0 {
+		if blockCount == blockSize || err == io.EOF && blockCount != 0 {
 			// sort the in memory list
 			sort.Sort(list)
 			// now write them out
 			for _, rec := range list.records {
-				_, err := write(sourceTape[destination].fp, rec, context)
+				err := write(sourceTape[destination].fp, rec, context)
 				if err != nil {
 					return err
 				}
@@ -64,7 +86,7 @@ func MergeSort(unsortedFile, sortedFile *os.File, read readRecordFunc, write wri
 			destination ^= 1 // toggle tape
 			blockCount = 0
 		}
-		if recordSize == 0 {
+		if err == io.EOF {
 			break // all done
 		}
 	}
@@ -85,11 +107,11 @@ func MergeSort(unsortedFile, sortedFile *os.File, read readRecordFunc, write wri
 		sourceTape[1] = sourceTape[0]
 		sourceTape[0].fp = sortedFile
 		for sourceTape[1].count != 0 {
-			record[0], _, err = read(sourceTape[1].fp, context)
+			record[0], err = read(sourceTape[1].fp, context)
 			if err != nil {
 				return err
 			}
-			_, err := write(sourceTape[0].fp, record[0], context)
+			err := write(sourceTape[0].fp, record[0], context)
 			if err != nil {
 				return err
 			}
@@ -114,11 +136,11 @@ func MergeSort(unsortedFile, sortedFile *os.File, read readRecordFunc, write wri
 				return err
 			}
 			defer os.Remove(destinationTape[1].fp.Name())
-			record[0], _, err = read(sourceTape[0].fp, context)
+			record[0], err = read(sourceTape[0].fp, context)
 			if err != nil {
 				return err
 			}
-			record[1], _, err = read(sourceTape[1].fp, context)
+			record[1], err = read(sourceTape[1].fp, context)
 			if err != nil {
 				return err
 			}
@@ -143,12 +165,12 @@ func MergeSort(unsortedFile, sortedFile *os.File, read readRecordFunc, write wri
 					} else {
 						sel = 1
 					}
-					_, err = write(destinationTape[destination].fp, record[sel], context)
+					err = write(destinationTape[destination].fp, record[sel], context)
 					if err != nil {
 						return err
 					}
 					if sourceTape[sel].count > 1 {
-						record[sel], _, err = read(sourceTape[sel].fp, context)
+						record[sel], err = read(sourceTape[sel].fp, context)
 						if err != nil {
 							return err
 						}
@@ -163,7 +185,6 @@ func MergeSort(unsortedFile, sortedFile *os.File, read readRecordFunc, write wri
 			sourceTape[1].fp.Close()
 			destinationTape[0].fp.Seek(0, os.SEEK_SET)
 			destinationTape[1].fp.Seek(0, os.SEEK_SET)
-			// fixme memcmp?
 			sourceTape[0] = destinationTape[0]
 			sourceTape[1] = destinationTape[1]
 			blockSize <<= 1
@@ -171,4 +192,9 @@ func MergeSort(unsortedFile, sortedFile *os.File, read readRecordFunc, write wri
 	}
 	sourceTape[1].fp.Close()
 	return nil
+}
+
+type tape struct {
+	fp    *os.File
+	count int
 }

@@ -1,22 +1,20 @@
 package mergesort
 
-type record []byte
-
 type recordsList struct {
-	records []record
-	compare compareRecordsFunc
+	records []interface{}
+	compare CompareRecords
 	context interface{}
 }
 
-func newRecordsList(expectedSize int, compare compareRecordsFunc, context interface{}) *recordsList {
+func newRecordsList(expectedSize int, compare CompareRecords, context interface{}) *recordsList {
 	return &recordsList{
-		records: make([]record, 0, expectedSize),
+		records: make([]interface{}, 0, expectedSize),
 		compare: compare,
 		context: context,
 	}
 }
 
-func (rl *recordsList) add(r record) {
+func (rl *recordsList) add(r interface{}) {
 	rl.records = append(rl.records, r)
 }
 
