@@ -54,7 +54,7 @@ func TestSmallString(t *testing.T) {
 	}
 	defer sortedFile.Close()
 	defer os.Remove(sortedFile.Name())
-	err = MergeSort(unsortedFile, sortedFile, readNewlineString, writeNewlineString, compareStrings, nil, 2)
+	err = MergeSort(unsortedFile, sortedFile, readNewlineString, writeNewlineString, compareStrings, nil, 10)
 	if err != nil {
 		t.Error(err)
 	}
