@@ -69,7 +69,7 @@ func TestSmallString(t *testing.T) {
 	}
 	defer sortedFile.Close()
 	defer os.Remove(sortedFile.Name())
-	err = MergeSort(unsortedFile, sortedFile, readNewlineString, writeNewlineString, compareStrings, nil, 10)
+	err = MergeSort(unsortedFile, sortedFile, readNewlineString, writeNewlineString, compareStrings, nil, 10, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -114,7 +114,7 @@ func TestMediumNumbers(t *testing.T) {
 	}
 	defer sortedFile.Close()
 	defer os.Remove(sortedFile.Name())
-	err = MergeSort(unsortedFile, sortedFile, readNewlineString, writeNewlineString, compareNumbers, nil, 64)
+	err = MergeSort(unsortedFile, sortedFile, readNewlineString, writeNewlineString, compareNumbers, nil, 64, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -150,7 +150,7 @@ func TestSameFile(t *testing.T) {
 	}
 	unsortedFile.Seek(0, os.SEEK_SET)
 
-	err = MergeSort(unsortedFile, unsortedFile, readNewlineString, writeNewlineString, compareNumbers, nil, 64)
+	err = MergeSort(unsortedFile, unsortedFile, readNewlineString, writeNewlineString, compareNumbers, nil, 64, "")
 	if err != nil {
 		t.Error(err)
 	}

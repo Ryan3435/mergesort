@@ -53,18 +53,18 @@ type CompareRecords func(rec1, rec2 interface{}, context interface{}) int
 //
 // NOTE: Be sure to rewind unsortedFile first if just wrote it out.  See
 // https://github.com/mschoch/mergesort/issues/1
-func MergeSort(unsortedFile, sortedFile *os.File, read ReadRecord, write WriteRecord, compare CompareRecords, context interface{}, blockSize int) error {
+func MergeSort(unsortedFile, sortedFile *os.File, read ReadRecord, write WriteRecord, compare CompareRecords, context interface{}, blockSize int, tempDir string) error {
 	var err error
 	sourceTape := make([]tape, 2)
 	record := make([]interface{}, 2)
 
 	// create temporary files sourceTape[0] and sourceTape[1]
-	sourceTape[0].fp, err = ioutil.TempFile("", "goms")
+	sourceTape[0].fp, err = ioutil.TempFile(tempDir, "goms")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(sourceTape[0].fp.Name())
-	sourceTape[1].fp, err = ioutil.TempFile("", "goms")
+	sourceTape[1].fp, err = ioutil.TempFile(tempDir, "goms")
 	if err != nil {
 		return err
 	}
