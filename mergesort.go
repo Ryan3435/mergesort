@@ -139,13 +139,13 @@ func MergeSort(unsortedFile, sortedFile *os.File, read ReadRecord, write WriteRe
 			if sourceTape[0].count <= blockSize {
 				destinationTape[0].fp = sortedFile
 			} else {
-				destinationTape[0].fp, err = ioutil.TempFile("", "goms")
+				destinationTape[0].fp, err = ioutil.TempFile(tempDir, "goms")
 				if err != nil {
 					return err
 				}
 				defer os.Remove(destinationTape[0].fp.Name())
 			}
-			destinationTape[1].fp, err = ioutil.TempFile("", "goms")
+			destinationTape[1].fp, err = ioutil.TempFile(tempDir, "goms")
 			if err != nil {
 				return err
 			}
